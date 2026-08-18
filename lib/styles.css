@@ -1,0 +1,382 @@
+/* minecraft-ui — original procedural Minecraft-inspired skin for DSH. */
+@font-face {
+  font-family: "Monocraft";
+  src: url("data:font/ttf;base64,__MONOCRAFT_FONT_DATA__") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+body.minecraft-ui-active {
+  --dsw-alias-bg-base: #171915;
+  --dsw-alias-bg-layer-1: #252821;
+  --dsw-alias-bg-layer-2: #34372f;
+  --dsw-alias-bg-overlay: #20231d;
+  --dsw-alias-border-l1: #4b5044;
+  --dsw-alias-border-l2: #11130f;
+  --dsw-alias-brand-primary: #78b94a;
+  --dsw-alias-label-primary: #f1f1e8;
+  --dsw-alias-label-secondary: #b9bcae;
+  --dsw-alias-state-error-primary: #e05a47;
+  --dsw-alias-state-success-primary: #78b94a;
+  --dsw-alias-state-warn-primary: #e1b84b;
+  --dsw-specific-sidebar-fill: #30271f;
+  --mc-grass: #78b94a;
+  --mc-grass-bright: #91d25f;
+  --mc-grass-dark: #416d2c;
+  --mc-dirt: #6f5037;
+  --mc-dirt-dark: #3c2c23;
+  --mc-stone: #74796b;
+  --mc-stone-light: #989d8b;
+  --mc-deepslate: #171915;
+  --mc-coal: #0c0d0b;
+  --mc-gold: #e1b84b;
+  --mc-redstone: #e05a47;
+  --mc-text: #f1f1e8;
+  --mc-muted: #b9bcae;
+  --mc-pixel: "Monocraft", "Cascadia Mono", "Noto Sans Mono CJK SC", "Microsoft YaHei UI", monospace;
+  --dsw-font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  --dsw-alias-bg-layer-3: #3c4037;
+  --dsw-alias-bg-mask-1: rgba(6, 7, 5, .72);
+  --dsw-alias-bg-mask-2: rgba(6, 7, 5, .42);
+  --dsw-alias-label-tertiary: #929687;
+  --dsw-alias-label-caption: #7b8072;
+  --dsw-alias-label-dimmed: #5d6256;
+  --dsw-alias-brand-text: #a9df79;
+  --dsw-alias-state-business-primary: #78b94a;
+  --dsw-alias-state-business-tertiary: #304527;
+  --dsw-alias-interactive-bg-hover: rgba(145, 210, 95, .10);
+  --dsw-alias-interactive-bg-active: rgba(145, 210, 95, .18);
+  --dsw-alias-interactive-bg-hover-accent: rgba(145, 210, 95, .24);
+  --dsw-alias-button-info-fill: #568c37;
+  --dsw-alias-button-info-hover: #67a842;
+  --dsw-alias-specific-sidebar-fill: #30271f;
+  --dsw-alias-specific-sidebar-nav-item-active: #4a5e35;
+  --dsw-alias-specific-sidebar-nav-item-hover: #40372c;
+  --dsw-alias-specific-menu: #252821;
+  --dsw-alias-specific-bubble: #2d3029;
+  --dsw-alias-specific-input-major: #20231d;
+  --dsw-alias-markdown-code-block: #141612;
+  --dsw-alias-markdown-code-block-banner: #22251f;
+  --dsw-alias-markdown-inline-code: #30352a;
+  --dsw-alias-toast-bg: #252820;
+  --dsw-alias-tooltip-bg: #11130f;
+  --dsh-scrollbar-thumb: #626759;
+  --dsh-scrollbar-thumb-hover: #7f856f;
+  margin: 0;
+  color: var(--mc-text);
+  background-color: var(--mc-deepslate);
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    radial-gradient(circle at 18% 13%, rgba(120,185,74,.09), transparent 24rem),
+    linear-gradient(135deg, #1b1d18, #121410 68%);
+  background-size: 16px 16px, 16px 16px, auto, auto;
+}
+
+/* The theme presenter writes its active palette as inline custom properties.
+   Important declarations keep the mounted skin authoritative without touching DOM internals. */
+body.minecraft-ui-active {
+  --dsw-alias-bg-base: #171915 !important;
+  --dsw-alias-bg-layer-1: #252821 !important;
+  --dsw-alias-bg-layer-2: #34372f !important;
+  --dsw-alias-bg-layer-3: #3c4037 !important;
+  --dsw-alias-bg-overlay: #20231d !important;
+  --dsw-alias-border-l1: #4b5044 !important;
+  --dsw-alias-border-l2: #11130f !important;
+  --dsw-alias-brand-primary: #78b94a !important;
+  --dsw-alias-label-primary: #f1f1e8 !important;
+  --dsw-alias-label-secondary: #b9bcae !important;
+  --dsw-alias-label-tertiary: #929687 !important;
+  --dsw-alias-state-error-primary: #e05a47 !important;
+  --dsw-alias-state-success-primary: #78b94a !important;
+  --dsw-alias-state-warn-primary: #e1b84b !important;
+  --dsw-alias-state-business-primary: #78b94a !important;
+  --dsw-alias-button-info-fill: #568c37 !important;
+  --dsw-alias-button-info-hover: #67a842 !important;
+  --dsw-specific-sidebar-fill: #30271f !important;
+  --dsw-alias-specific-sidebar-fill: #30271f !important;
+  --dsw-alias-specific-sidebar-nav-item-active: #4a5e35 !important;
+  --dsw-alias-specific-sidebar-nav-item-hover: #40372c !important;
+  --dsw-alias-specific-menu: #252821 !important;
+  --dsw-alias-specific-bubble: #2d3029 !important;
+  --dsw-alias-specific-input-major: #20231d !important;
+  --dsw-alias-markdown-code-block: #141612 !important;
+  --dsw-alias-markdown-code-block-banner: #22251f !important;
+  --dsw-alias-markdown-inline-code: #30352a !important;
+}
+
+body.minecraft-ui-active,
+body.minecraft-ui-active button,
+body.minecraft-ui-active input,
+body.minecraft-ui-active textarea,
+body.minecraft-ui-active select {
+  text-rendering: geometricPrecision;
+}
+
+body.minecraft-ui-active h1,
+body.minecraft-ui-active h2,
+body.minecraft-ui-active h3,
+body.minecraft-ui-active h4,
+body.minecraft-ui-active button,
+body.minecraft-ui-active [role="tab"],
+body.minecraft-ui-active [role="menuitem"],
+body.minecraft-ui-active kbd {
+  font-family: var(--mc-pixel);
+  letter-spacing: .015em;
+}
+
+body.minecraft-ui-active h1,
+body.minecraft-ui-active h2,
+body.minecraft-ui-active h3 {
+  color: var(--mc-text);
+  text-shadow: 2px 2px 0 var(--mc-coal);
+}
+
+/* Pixel focus is deliberately loud and remains visible over every block texture. */
+body.minecraft-ui-active :focus-visible {
+  outline: 2px solid var(--mc-grass-bright) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 2px var(--mc-coal), 0 0 0 5px rgba(145,210,95,.22) !important;
+}
+
+/* Stone slab controls: high edge, dark underside, one-pixel highlight. */
+body.minecraft-ui-active button,
+body.minecraft-ui-active [role="button"] {
+  border-radius: 1px !important;
+  border-color: #11130f !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 1px 0 0 rgba(255,255,255,.08),
+    inset 0 -2px 0 rgba(0,0,0,.30),
+    0 3px 0 #0b0c0a;
+  transition: transform 120ms steps(2, end), filter 120ms linear, box-shadow 120ms linear;
+}
+
+body.minecraft-ui-active button:not(:disabled):hover,
+body.minecraft-ui-active [role="button"]:not([aria-disabled="true"]):hover {
+  filter: brightness(1.14) saturate(1.08);
+}
+
+body.minecraft-ui-active button:not(:disabled):active,
+body.minecraft-ui-active [role="button"]:not([aria-disabled="true"]):active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 rgba(0,0,0,.28), 0 1px 0 #0b0c0a;
+}
+
+body.minecraft-ui-active button:disabled,
+body.minecraft-ui-active [aria-disabled="true"] {
+  filter: grayscale(.55) brightness(.72);
+  opacity: .72;
+}
+
+/* Inputs read like inventory slots rather than glossy cards. */
+body.minecraft-ui-active input,
+body.minecraft-ui-active textarea,
+body.minecraft-ui-active select,
+body.minecraft-ui-active [contenteditable="true"] {
+  border-radius: 0 !important;
+  border: 2px solid #0c0d0b !important;
+  background-color: #181a16 !important;
+  background-image:
+    linear-gradient(135deg, rgba(255,255,255,.028) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(255,255,255,.02) 25%, transparent 25%);
+  background-size: 8px 8px;
+  color: var(--mc-text) !important;
+  box-shadow: inset 2px 2px 0 rgba(0,0,0,.55), inset -1px -1px 0 rgba(255,255,255,.09) !important;
+  caret-color: var(--mc-grass-bright);
+}
+
+body.minecraft-ui-active input::placeholder,
+body.minecraft-ui-active textarea::placeholder {
+  color: #858a7b !important;
+  opacity: 1;
+}
+
+body.minecraft-ui-active input:focus,
+body.minecraft-ui-active textarea:focus,
+body.minecraft-ui-active select:focus {
+  border-color: var(--mc-grass) !important;
+}
+
+/* Stable CSS-module role suffixes keep the composer and primary shell actions
+   blocky without depending on the generated hash prefix. */
+body.minecraft-ui-active [class*="_card"]:has(textarea) {
+  overflow: hidden;
+  border: 2px solid #0b0c0a !important;
+  border-top: 5px solid var(--mc-grass-dark) !important;
+  border-radius: 2px !important;
+  background: #252821 !important;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.10), 0 5px 0 #0b0c0a, 0 12px 28px rgba(0,0,0,.30) !important;
+}
+body.minecraft-ui-active [class*="_card"]:has(textarea) button,
+body.minecraft-ui-active button[class*="_iconButton"],
+body.minecraft-ui-active button[class*="_newSession"] {
+  background-color: #4d5246 !important;
+  color: var(--mc-text) !important;
+}
+body.minecraft-ui-active [class*="_card"]:has(textarea) button:hover,
+body.minecraft-ui-active button[class*="_iconButton"]:hover,
+body.minecraft-ui-active button[class*="_newSession"]:hover {
+  background-color: #62695a !important;
+}
+body.minecraft-ui-active button[class*="_send"] {
+  background-color: var(--mc-grass-dark) !important;
+  color: #f7ffe9 !important;
+}
+
+/* Durable semantic surfaces; theme tokens handle CSS-module-specific cards. */
+body.minecraft-ui-active aside {
+  background-color: #30271f !important;
+  background-image:
+    linear-gradient(0deg, rgba(53,36,25,.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(117,82,53,.20) 1px, transparent 1px),
+    radial-gradient(circle at 30% 20%, rgba(143,102,67,.13) 0 2px, transparent 3px) !important;
+  background-size: 16px 16px, 16px 16px, 24px 24px !important;
+  border-right: 3px solid #15120f !important;
+  box-shadow: inset -1px 0 0 rgba(255,255,255,.08), 5px 0 0 rgba(0,0,0,.12);
+}
+
+body.minecraft-ui-active header {
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,.035), transparent),
+    repeating-linear-gradient(90deg, transparent 0 31px, rgba(0,0,0,.08) 31px 32px) !important;
+  border-bottom-color: #11130f !important;
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,.07);
+}
+
+body.minecraft-ui-active [role="dialog"],
+body.minecraft-ui-active [role="menu"],
+body.minecraft-ui-active [role="listbox"],
+body.minecraft-ui-active [role="tooltip"] {
+  border-radius: 1px !important;
+  border: 2px solid #10120e !important;
+  background-color: #252821 !important;
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px) !important;
+  background-size: 12px 12px !important;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.13), inset -1px -1px 0 rgba(0,0,0,.4), 8px 10px 0 rgba(0,0,0,.30) !important;
+}
+
+body.minecraft-ui-active [role="option"][aria-selected="true"],
+body.minecraft-ui-active [role="tab"][aria-selected="true"],
+body.minecraft-ui-active [aria-current="page"] {
+  color: #f5ffe9 !important;
+  background-color: #496b34 !important;
+  background-image: linear-gradient(180deg, rgba(145,210,95,.22), rgba(0,0,0,.08)) !important;
+  box-shadow: inset 0 -3px 0 var(--mc-grass-dark) !important;
+}
+
+body.minecraft-ui-active hr {
+  height: 2px;
+  border: 0;
+  background: linear-gradient(180deg, #0c0d0b 0 50%, rgba(255,255,255,.09) 50%);
+}
+
+/* Code becomes a deepslate tablet; inline code uses mossy stone. */
+body.minecraft-ui-active pre {
+  border-radius: 1px !important;
+  border: 2px solid #0a0b09 !important;
+  background-color: #11130f !important;
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px) !important;
+  background-size: 12px 12px !important;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.07), 0 3px 0 rgba(0,0,0,.35);
+}
+
+body.minecraft-ui-active :not(pre) > code {
+  border: 1px solid #171a14;
+  border-radius: 0 !important;
+  background: #30352a !important;
+  color: #cce8b4 !important;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.35);
+}
+
+body.minecraft-ui-active pre code,
+body.minecraft-ui-active samp {
+  font-family: "Cascadia Mono", "Noto Sans Mono CJK SC", Consolas, monospace !important;
+}
+
+body.minecraft-ui-active blockquote {
+  border-left: 4px solid var(--mc-grass) !important;
+  background: rgba(65,109,44,.10);
+  box-shadow: inset 1px 0 0 rgba(145,210,95,.25);
+}
+
+body.minecraft-ui-active a {
+  color: #9bd56d;
+  text-decoration-color: #416d2c;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+body.minecraft-ui-active a:hover { color: #c5ef9f; }
+
+body.minecraft-ui-active kbd {
+  border: 1px solid #0a0b09;
+  border-radius: 0;
+  padding: 2px 5px;
+  color: #f4f4e8;
+  background: #555b4d;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 2px 0 #0a0b09;
+}
+
+body.minecraft-ui-active progress {
+  overflow: hidden;
+  border: 2px solid #0a0b09;
+  border-radius: 0;
+  background: #151712;
+}
+body.minecraft-ui-active progress::-webkit-progress-bar { background: #151712; }
+body.minecraft-ui-active progress::-webkit-progress-value {
+  background: repeating-linear-gradient(90deg, var(--mc-grass) 0 8px, #6aa63f 8px 9px);
+}
+
+body.minecraft-ui-active ::selection {
+  color: #10130d;
+  background: #9bd56d;
+}
+
+body.minecraft-ui-active * {
+  scrollbar-color: #626759 #181a16;
+}
+body.minecraft-ui-active *::-webkit-scrollbar { width: 12px; height: 12px; }
+body.minecraft-ui-active *::-webkit-scrollbar-track {
+  background: #181a16;
+  border-left: 1px solid #0c0d0b;
+}
+body.minecraft-ui-active *::-webkit-scrollbar-thumb {
+  border: 2px solid #181a16;
+  border-radius: 0;
+  background: #626759;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.16), inset -1px -1px 0 rgba(0,0,0,.32);
+}
+body.minecraft-ui-active *::-webkit-scrollbar-thumb:hover { background: #7f856f; }
+
+@media (max-width: 640px) {
+  body.minecraft-ui-active {
+    background-size: 12px 12px, 12px 12px, auto, auto;
+  }
+  body.minecraft-ui-active button,
+  body.minecraft-ui-active [role="button"] {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.30), 0 2px 0 #0b0c0a;
+  }
+  body.minecraft-ui-active [role="dialog"],
+  body.minecraft-ui-active [role="menu"],
+  body.minecraft-ui-active [role="listbox"] {
+    max-width: calc(100vw - 16px);
+    box-shadow: inset 1px 1px 0 rgba(255,255,255,.10), 4px 5px 0 rgba(0,0,0,.25) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.minecraft-ui-active *,
+  body.minecraft-ui-active *::before,
+  body.minecraft-ui-active *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

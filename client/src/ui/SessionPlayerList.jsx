@@ -1,0 +1,2 @@
+import React from"react";
+export function SessionPlayerList({sessions,current}){return <div className="mc-player-list"><h3>DSH Agents</h3><div>{sessions.slice(0,9).map((s,i)=><div key={s.id} className={s.id===current?"current":""}><b>{i+1}</b><span>{s.displayTitle||s.id}</span><i className={s.running?"running":"idle"}>{s.running?"●":"◆"}</i></div>)}</div><small>按住 Tab 查看 · 同时按 1–9 切换</small></div>}

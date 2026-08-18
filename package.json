@@ -1,0 +1,37 @@
+{
+  "name": "minecraft-ui",
+  "version": "0.2.0",
+  "description": "Playable Minecraft-inspired voxel client that replaces the DSH Web shell on an isolated test profile",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-model-selection",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "platform": "web",
+      "immediately": true
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node --check lib/index.js && node --check scripts/build.mjs && node --check client/src/inventory.js && node --check client/src/world.js && node --check client/src/persistence.js",
+    "test": "node --test test/*.test.js",
+    "verify": "npm run check && npm run test && npm run build && node --check lib/client.js"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.9"
+  },
+  "license": "MIT"
+}
