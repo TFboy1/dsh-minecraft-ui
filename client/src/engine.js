@@ -95,7 +95,7 @@ export class VoxelGame {
       if (this.options.isSessionListOpen?.() && /^Digit[1-9]$/.test(event.code)) { event.preventDefault(); this.options.onTabSelect?.(Number(event.code.slice(5)) - 1); return; }
       if (event.code === "KeyT" && !this.options.isUiOpen()) { event.preventDefault(); document.exitPointerLock?.(); this.options.onChat(); return; }
       if (event.code === "KeyE" && !this.options.isUiOpen()) { event.preventDefault(); document.exitPointerLock?.(); this.options.onInventory(); return; }
-      if (["KeyM","KeyP","KeyR"].includes(event.code) && !this.options.isUiOpen()) { event.preventDefault(); document.exitPointerLock?.(); this.options.onFacility?.(event.code==="KeyM"?"models":event.code==="KeyP"?"capabilities":"reasoning"); return; }
+      if (["KeyM","KeyP","KeyR","KeyG"].includes(event.code) && !this.options.isUiOpen()) { event.preventDefault(); this.releaseForUi(); const map={KeyM:"models",KeyP:"capabilities",KeyR:"reasoning",KeyG:"workbench"};this.options.onFacility?.(map[event.code]); return; }
       if (event.code === "KeyF" && !this.options.isUiOpen()) { event.preventDefault(); this.options.onOffhandSwap?.(); return; }
       if (event.code === "Escape" && !this.options.isUiOpen()) { document.exitPointerLock?.(); this.options.onPause(); return; }
       if (this.options.isUiOpen()) return;
@@ -159,7 +159,7 @@ export class VoxelGame {
       const angle = index / Math.max(1, Math.min(rows.length,12)) * Math.PI * 2;
       const isCurrent=row.id===currentId,x=isCurrent?2:Math.round(Math.cos(angle)*(10+index%3)),z=isCurrent?2:Math.round(Math.sin(angle)*(10+index%3));
       const npc = makeNpc(row.displayTitle || row.id, isCurrent ? 0x74b84a : (row.running ? 0x9b673f : 0x546f86));
-      npc.position.set(x+.5, isCurrent?(this.world.facilities?.workbench?.y||12):highestSolid(this.world,x,z)+1, z+.5); npc.userData.sessionId = row.id; npc.userData.home=npc.position.clone();npc.userData.target=npc.position.clone();this.npcGroup.add(npc);
+      npc.position.set(x+.5, isCurrent?(this.world.facilities?.workbench?.y||12):highestSolid(this.world,x,z)+1, z+.5); npc.userData.sessionId = row.id; npc.userData.label=row.displayTitle||row.id; npc.userData.home=npc.position.clone();npc.userData.target=npc.position.clone();this.npcGroup.add(npc);
     });
   }
   setToolActivity(calls=[]){const npc=this.npcGroup.children.find(n=>n.userData.sessionId===this.currentSessionId);if(!npc)return;const call=calls[0],name=call?.name||"";let facility=null;if(/read|glob|grep/i.test(name))facility=this.world.facilities?.bookshelf;else if(/write|edit/i.test(name))facility=this.world.facilities?.workbench;else if(/terminal|bash|pwsh|command/i.test(name))facility=this.world.facilities?.terminal;npc.userData.activity=call?name:null;npc.userData.target=facility?new THREE.Vector3(facility.x+.5,facility.y,facility.z-.6):npc.userData.home.clone();}
@@ -201,13 +201,15 @@ export class VoxelGame {
     const hits=this.raycaster.intersectObjects(this.npcGroup.children,true);
     if(!hits[0]||hits[0].distance>REACH)return null;
     let node=hits[0].object;while(node&&node.parent!==this.npcGroup)node=node.parent;
-    return node?.userData?.sessionId?node:null;
+    if(node?.userData?.sessionId){node.userData.rayDistance=hits[0].distance;return node}return null;
   }
+  publishTarget(){if(this.options.isUiOpen()||document.pointerLockElement!==this.renderer.domElement){this.options.onTarget?.(null);return}const npc=this.targetNpc(),hit=this.targetBlock();if(npc&&(!hit||npc.userData.rayDistance<hit.distance)){this.options.onTarget?.({kind:"npc",label:npc.userData.label||"Agent",action:"交互"});return}if(!hit){this.options.onTarget?.(null);return}const semantic=BLOCKS[hit.type]?.semantic;const labels={workbench:["DSH 工作台","打开"],models:["模型箱","打开"],capabilities:["插件箱","打开"],reasoning:["附魔台","调整推理强度"],tutorial:["公告牌","阅读"],terminal:["Agent 终端","查看工具状态"],read:["资料书架","查看"]};const row=labels[semantic]||[hit.type,hit.type==="chest"?"打开":"使用"];this.options.onTarget?.({kind:"block",label:row[0],action:row[1],coord:hit.coord});}
+  releaseForUi(){this.keys.clear();this.mining=null;this.breakProgress=0;document.exitPointerLock?.();}
   useTarget() {
-    const npc=this.targetNpc(); if(npc){this.options.onSelectSession(npc.userData.sessionId);return;}
+    const npc=this.targetNpc(); if(npc){this.releaseForUi();this.options.onSelectSession(npc.userData.sessionId);this.options.onFacility?.("agent",{sessionId:npc.userData.sessionId});return;}
     const hit=this.targetBlock(); if(!hit)return;
-    if(hit.type==="chest"){this.options.onOpenChest(keyOf(...hit.coord));return;}
-    if(BLOCKS[hit.type]?.semantic){this.options.onFacility?.(BLOCKS[hit.type].semantic,{...hit,key:keyOf(...hit.coord)});return;}
+    if(hit.type==="chest"){this.releaseForUi();this.options.onOpenChest(keyOf(...hit.coord));return;}
+    if(BLOCKS[hit.type]?.semantic){this.releaseForUi();this.options.onFacility?.(BLOCKS[hit.type].semantic,{...hit,key:keyOf(...hit.coord)});return;}
     let item=this.options.getInventory()[27+this.selected]; let def=ITEM_DEFS[item?.id]; let fromOffhand=false;
     if(!def?.place){item=this.options.getOffhand?.();def=ITEM_DEFS[item?.id];fromOffhand=true;} if(!def?.place)return;
     const [x,y,z]=hit.coord; const px=x+Math.round(hit.normal.x),py=y+Math.round(hit.normal.y),pz=z+Math.round(hit.normal.z);
@@ -233,7 +235,7 @@ export class VoxelGame {
 
   animate() {
     if(!this.running)return; requestAnimationFrame(this.animate); const dt=Math.min(.05,this.clock.getDelta());
-    this.updateMovement(dt); this.updateMining(dt); this.updateDrops(dt); this.updateHeldModels(); this.updateNpcMotion(dt);
+    this.updateMovement(dt); this.updateMining(dt); this.updateDrops(dt); this.updateHeldModels(); this.updateNpcMotion(dt);if(!this.lastTargetAt||performance.now()-this.lastTargetAt>100){this.lastTargetAt=performance.now();this.publishTarget();}
     const swing=this.breakProgress>0?Math.sin(this.breakProgress*Math.PI*5)*.28:0;this.heldMain.rotation.x=swing;this.heldMain.rotation.z=-swing*.6;
     this.camera.position.set(this.position.x,this.position.y+EYE_HEIGHT,this.position.z);this.camera.rotation.order="YXZ";this.camera.rotation.y=this.yaw;this.camera.rotation.x=this.pitch;
     this.renderer.render(this.scene,this.camera);

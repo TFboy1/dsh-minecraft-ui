@@ -10,7 +10,7 @@ export const BLOCKS = Object.freeze({
   planks: { solid: true, hardness: 0.65, drop: "planks" },
   chest: { solid: true, hardness: 0.8, drop: "planks", container: true },
   torch: { solid: false, hardness: 0.05, drop: "torch" },
-  crafting_table: { solid: true, hardness: 0.75, drop: "crafting_table", semantic: "chat" },
+  crafting_table: { solid: true, hardness: 0.75, drop: "crafting_table", semantic: "workbench" },
   model_chest: { solid: true, hardness: 0.9, drop: "planks", container: true, semantic: "models" },
   plugin_chest: { solid: true, hardness: 0.9, drop: "planks", container: true, semantic: "capabilities" },
   enchant_table: { solid: true, hardness: 1.4, drop: "stone", semantic: "reasoning" },
@@ -45,8 +45,8 @@ export function buildStarterHouse(blocks) {
     blocks.set(keyOf(x,floorY+5,z),"planks");
   }
   const place=(name,x,z,type)=>{const value={x,y:floorY+1,z,key:keyOf(x,floorY+1,z),type};blocks.set(value.key,type);facilities[name]=value;};
-  place("workbench",0,4,"crafting_table");place("modelChest",-3,1,"model_chest");place("pluginChest",3,1,"plugin_chest");place("enchantTable",-3,4,"enchant_table");place("bookshelf",-4,4,"bookshelf");place("terminal",3,4,"terminal");place("tutorial",0,-2,"sign");
-  return { floorY, facilities, spawn:{x:.5,y:floorY+1.01,z:-.5,yaw:Math.PI,pitch:0} };
+  place("workbench",0,4,"crafting_table");place("modelChest",-3,1,"model_chest");place("pluginChest",3,1,"plugin_chest");place("enchantTable",-3,4,"enchant_table");place("bookshelf",-4,4,"bookshelf");place("terminal",3,4,"terminal");place("tutorial",-2,5,"sign");
+  return { floorY, facilities, spawn:{x:.5,y:floorY+1.01,z:-.5,yaw:Math.PI,pitch:-.2} };
 }
 
 export function generateWorld(seed = 1337, radius = WORLD_RADIUS) {
