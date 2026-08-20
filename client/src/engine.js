@@ -5,6 +5,7 @@ import { movementVector } from "./movement.js";
 import { createBlockModel, createItemModel, disposeModelCache } from "./models/factory.js";
 import { modelDefinition } from "./models/registry.js";
 import { classifyToolActivity } from "./dsh/tool-activity-router.js";
+import { canPickupDrop, dropLaunchVelocity } from "./drop-physics.js";
 
 const PLAYER_WIDTH = 0.6;
 const PLAYER_HEIGHT = 1.8;
@@ -45,23 +46,19 @@ function pixelTexture(type) {
   return texture;
 }
 
-function makeNpc(label, color = 0x6b8e46) {
-  const root = new THREE.Group();
-  const mat = new THREE.MeshLambertMaterial({ color });
-  const skin = new THREE.MeshLambertMaterial({ color: 0xc79a72 });
-  const dark = new THREE.MeshLambertMaterial({ color: 0x34291f });
-  const box = (w, h, d, material, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material); m.position.set(x, y, z); root.add(m); return m; };
-  box(.7, .9, .38, mat, 0, 1.32, 0); box(.55, .55, .55, skin, 0, 2.05, 0);
-  box(.22, .75, .22, dark, -.2, .48, 0); box(.22, .75, .22, dark, .2, .48, 0);
-  box(.18, .75, .18, mat, -.47, 1.3, 0); box(.18, .75, .18, mat, .47, 1.3, 0);
-  const c = document.createElement("canvas"); c.width = 384; c.height = 72; const cx = c.getContext("2d"),texture=new THREE.CanvasTexture(c);
-  texture.magFilter=THREE.NearestFilter;texture.minFilter=THREE.NearestFilter;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:texture, transparent:true, depthTest:false }));
-  sprite.position.set(0,2.72,0);sprite.scale.set(4.4,.82,1);sprite.visible=false;root.add(sprite);
-  root.userData.npc=true;root.userData.label=label;root.userData.labelSprite=sprite;root.userData.labelCanvas=c;root.userData.labelContext=cx;root.userData.labelText="";
+function makeWorkDog(label,color=0x92948d){
+  const root=new THREE.Group(),fur=new THREE.MeshLambertMaterial({color}),cream=new THREE.MeshLambertMaterial({color:0xd9dbd2}),dark=new THREE.MeshLambertMaterial({color:0x343732}),collar=new THREE.MeshLambertMaterial({color:0xd94b3d});
+  const box=(w,h,d,material,x,y,z,parent=root)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);parent.add(mesh);return mesh};
+  box(1.05,.52,.48,fur,0,.62,0);box(.46,.36,.08,cream,0,.61,.27);const head=box(.55,.52,.55,fur,0,.82,.55);box(.42,.24,.28,cream,0,.7,.92);box(.6,.12,.58,collar,0,.57,.42);
+  box(.18,.3,.13,dark,-.2,1.11,.5);box(.18,.3,.13,dark,.2,1.11,.5);box(.075,.075,.05,dark,-.13,.9,.84);box(.075,.075,.05,dark,.13,.9,.84);box(.11,.09,.06,dark,0,.74,1.08);box(.05,.08,.04,collar,0,.48,.73);
+  const legSpots=[[-.36,.25,.24],[.36,.25,.24],[-.36,.25,-.24],[.36,.25,-.24]],legs=legSpots.map(([x,y,z])=>box(.18,.5,.18,fur,x,y,z));legSpots.forEach(([x,,z])=>box(.22,.12,.28,dark,x,.07,z+.04));
+  const tailPivot=new THREE.Group();tailPivot.position.set(0,.73,-.48);root.add(tailPivot);const tail=box(.13,.13,.44,fur,0,.1,-.17,tailPivot);tail.rotation.x=-.42;
+  const c=document.createElement("canvas");c.width=512;c.height=96;const cx=c.getContext("2d"),texture=new THREE.CanvasTexture(c);texture.magFilter=THREE.NearestFilter;texture.minFilter=THREE.NearestFilter;
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));sprite.position.set(0,1.58,0);sprite.scale.set(2.65,.5,1);root.add(sprite);
+  root.userData.npc=true;root.userData.label=label;root.userData.labelSprite=sprite;root.userData.labelCanvas=c;root.userData.labelContext=cx;root.userData.labelText="";root.userData.legs=legs;root.userData.tail=tailPivot;root.userData.head=head;
   return root;
 }
-function setNpcBadge(npc,text,visible=true,color="#9cff65"){const sprite=npc?.userData?.labelSprite,cx=npc?.userData?.labelContext;if(!sprite||!cx)return;sprite.visible=visible;if(!visible||npc.userData.labelText===`${text}|${color}`)return;npc.userData.labelText=`${text}|${color}`;cx.clearRect(0,0,384,72);cx.fillStyle="rgba(8,8,6,.78)";cx.fillRect(0,4,384,64);cx.strokeStyle="rgba(255,255,255,.28)";cx.strokeRect(1,5,382,62);cx.font="22px Monocraft, monospace";cx.textAlign="center";cx.fillStyle=color;cx.fillText(String(text).slice(0,31),192,45);sprite.material.map.needsUpdate=true;}
+function setNpcBadge(npc,text,visible=true,color="#9cff65"){const sprite=npc?.userData?.labelSprite,cx=npc?.userData?.labelContext,canvas=npc?.userData?.labelCanvas;if(!sprite||!cx||!canvas)return;sprite.visible=visible;if(!visible||npc.userData.labelText===`${text}|${color}`)return;npc.userData.labelText=`${text}|${color}`;const w=canvas.width,h=canvas.height;cx.clearRect(0,0,w,h);cx.fillStyle="rgba(8,8,6,.82)";cx.fillRect(0,6,w,h-12);cx.strokeStyle="rgba(255,255,255,.3)";cx.strokeRect(2,7,w-4,h-14);cx.font="26px Monocraft, monospace";cx.textAlign="center";cx.fillStyle=color;cx.fillText(String(text).slice(0,34),w/2,h*.62);sprite.material.map.needsUpdate=true;}
 
 export class VoxelGame {
   constructor(mount, options) {
@@ -83,7 +80,7 @@ export class VoxelGame {
     this.specialGroup = new THREE.Group(); this.specialColliders = []; this.scene.add(this.specialGroup);
     this.npcGroup = new THREE.Group(); this.scene.add(this.npcGroup);
     this.heldMain = new THREE.Group(); this.heldOff = new THREE.Group(); this.camera.add(this.heldMain,this.heldOff); this.scene.add(this.camera); this.heldIds = { main:null, off:null };
-    this.buildWorld(); this.updateHeldModels(); this.updateNpcs(options.sessions || [], options.currentSessionId);
+    this.buildWorld(); this.updateHeldModels(); this.updateWorkDogs(options.workActivities || []);
     this.bindEvents(); this.resize(); this.clock = new THREE.Clock(); this.lastSave = performance.now();
     this.animate = this.animate.bind(this); requestAnimationFrame(this.animate);
   }
@@ -154,19 +151,23 @@ export class VoxelGame {
     if(main!==this.heldIds.main){this.heldIds.main=main;mount(this.heldMain,main,false);}if(off!==this.heldIds.off){this.heldIds.off=off;mount(this.heldOff,off,true);}
   }
 
-  updateNpcs(rows, currentId) {
-    this.currentSessionId=currentId;
-    while (this.npcGroup.children.length) this.npcGroup.remove(this.npcGroup.children[0]);
-    rows.slice(0, 12).forEach((row, index) => {
-      const angle = index / Math.max(1, Math.min(rows.length,12)) * Math.PI * 2;
-      const isCurrent=row.id===currentId,x=isCurrent?2:Math.round(Math.cos(angle)*(10+index%3)),z=isCurrent?2:Math.round(Math.sin(angle)*(10+index%3));
-      const npc = makeNpc(row.displayTitle || row.id, isCurrent ? 0x74b84a : (row.running ? 0x9b673f : 0x546f86));
-      npc.position.set(x+.5, isCurrent?(this.world.facilities?.workbench?.y||12):highestSolid(this.world,x,z)+1, z+.5); npc.userData.sessionId = row.id; npc.userData.label=row.displayTitle||row.id; npc.userData.home=npc.position.clone();npc.userData.target=npc.position.clone();this.npcGroup.add(npc);
+  updateWorkDogs(activities=[]) {
+    const wanted=new Set(activities.map(work=>work.sessionId));
+    for(const dog of [...this.npcGroup.children])if(!wanted.has(dog.userData.sessionId))this.npcGroup.remove(dog);
+    const floorY=this.world.facilities?.workbench?.y||12,spots=[[0,2],[-2,0],[2,0],[0,-2],[-3,3],[3,3]];
+    activities.forEach((work,index)=>{
+      let dog=this.npcGroup.children.find(row=>row.userData.sessionId===work.sessionId);
+      if(!dog){const[x,z]=spots[index%spots.length];dog=makeWorkDog(work.title,index%2?0x85877f:0xa2a49c);dog.position.set(x+.5,floorY,z+.5);dog.rotation.y=Math.PI;dog.userData.sessionId=work.sessionId;dog.userData.home=dog.position.clone();dog.userData.target=dog.position.clone();dog.userData.idlePhase="rest";dog.userData.nextIdleMove=performance.now()+2200+Math.random()*2800;this.npcGroup.add(dog)}
+      dog.userData.label=work.title;dog.userData.progress=work.progress;dog.userData.workKind=work.kind;dog.userData.workActive=true;
+      const tool=work.toolName||"",route=tool?classifyToolActivity(tool):null,facility=route?.facility?this.world.facilities?.[route.facility]:null,routeKey=`${work.callId||""}:${route?.facility||""}`;
+      dog.userData.activityKind=route?.kind||work.kind;dog.userData.toolName=tool;
+      if(facility&&dog.userData.routeKey!==routeKey){dog.userData.routeKey=routeKey;dog.userData.target=new THREE.Vector3(facility.x+.3+(index%3)*.28,facility.y,facility.z-.65-(index%2)*.2);dog.userData.idlePhase="tool"}
+      else if(!facility&&dog.userData.routeKey){dog.userData.routeKey="";dog.userData.target=dog.userData.home.clone();dog.userData.idlePhase="rest";dog.userData.nextIdleMove=performance.now()+1800}
+      setNpcBadge(dog,work.progress,true,tool?"#ffe77a":"#b9ef8a");
     });
-    if(this.activeToolCalls?.length)this.setToolActivity(this.activeToolCalls);
+    this.mount.dataset.workDogCount=String(activities.length);this.mount.dataset.outdoorWorkDogCount="0";this.mount.dataset.workProgress=activities.map(work=>work.progress).join(" | ");
   }
-  setToolActivity(calls=[]){for(const npc of [...this.npcGroup.children])if(npc.userData.toolWorker)this.npcGroup.remove(npc);const base=this.npcGroup.children.find(n=>n.userData.sessionId===this.currentSessionId&&!n.userData.toolWorker);if(!base){this.activeToolCalls=calls;return}const route=(npc,call,index=0)=>{const activity=classifyToolActivity(call?.name||""),facility=activity.facility?this.world.facilities?.[activity.facility]:null;npc.userData.activity=call?call.name:null;npc.userData.activityKind=call?activity.kind:null;npc.userData.activityState=call?activity.label:null;npc.userData.callId=call?.callId||null;npc.userData.doneUntil=0;npc.userData.target=facility?new THREE.Vector3(facility.x+.5+index*.35,facility.y,facility.z-.7-index*.15):npc.userData.home.clone();if(call)setNpcBadge(npc,`${activity.label} · ${call.name}`,true,"#ffe77a");};if(calls[0])route(base,calls[0]);else if(base.userData.activity){const finished=base.userData.activity;base.userData.activity=null;base.userData.activityKind=null;base.userData.activityState=`完成 · ${finished}`;base.userData.doneUntil=performance.now()+2200;setNpcBadge(base,base.userData.activityState,true,"#8dff66");}else if(!base.userData.doneUntil)route(base,null);calls.slice(1,3).forEach((call,index)=>{const worker=makeNpc(call.name,0x9b673f);worker.userData.toolWorker=true;worker.userData.home=base.userData.home.clone().add(new THREE.Vector3((index+1)*.55,0,.45));worker.position.copy(worker.userData.home);worker.userData.sessionId=`worker:${call.callId}`;route(worker,call,index+1);this.npcGroup.add(worker);});this.activeToolCalls=calls;}
-  updateNpcMotion(dt){const now=performance.now();for(const npc of this.npcGroup.children){if(npc.userData.doneUntil&&now>npc.userData.doneUntil){npc.userData.doneUntil=0;npc.userData.activityState=null;npc.userData.target=npc.userData.home.clone();setNpcBadge(npc,"",false)}if(!npc.userData.activity&&!npc.userData.activityState&&now>(npc.userData.nextIdleMove||0)){npc.userData.nextIdleMove=now+3500+Math.random()*2500;const angle=Math.random()*Math.PI*2,radius=.35+Math.random()*.55;npc.userData.target=npc.userData.home.clone().add(new THREE.Vector3(Math.cos(angle)*radius,0,Math.sin(angle)*radius));}const target=npc.userData.target;if(!target)continue;const dx=target.x-npc.position.x,dz=target.z-npc.position.z,dist=Math.hypot(dx,dz),legs=npc.children.slice(2,4),arms=npc.children.slice(4,6),time=now*.012;if(dist>.06){const step=Math.min(dist,dt*2.2);npc.position.x+=dx/dist*step;npc.position.z+=dz/dist*step;npc.rotation.y=Math.atan2(dx,dz);legs.forEach((limb,i)=>limb.rotation.x=Math.sin(time+i*Math.PI)*.55);arms.forEach((limb,i)=>limb.rotation.x=Math.sin(time+i*Math.PI)*.35);}else{legs.forEach(limb=>limb.rotation.x=0);if(npc.userData.activity){const kind=npc.userData.activityKind;arms.forEach((limb,i)=>{limb.rotation.x=kind==="read"?-1.05:kind==="web"?-.75:Math.sin(time*(kind==="command"?1.8:1)+i*Math.PI)*(kind==="write"?.85:.38);limb.rotation.z=kind==="web"?(i?-.45:.45):0;});}else if(npc.userData.focused||npc.userData.activityState){arms[1].rotation.x=-1+Math.sin(time*1.7)*.45;arms[0].rotation.x=0;}else arms.forEach(limb=>{limb.rotation.x=0;limb.rotation.z=0;});}npc.position.y=npc.userData.home.y+(npc.userData.activity?Math.sin(now*.006)*.035:0);}}
+  updateNpcMotion(dt){const now=performance.now();for(const dog of this.npcGroup.children){const toolMode=!!dog.userData.toolName;if(!toolMode&&now>(dog.userData.nextIdleMove||0)){if(dog.userData.idlePhase==="wander"){dog.userData.idlePhase="rest";dog.userData.nextIdleMove=now+2600+Math.random()*4200;}else{const angle=Math.random()*Math.PI*2,radius=.65+Math.random()*1.25;dog.userData.idlePhase="wander";dog.userData.target=dog.userData.home.clone().add(new THREE.Vector3(Math.cos(angle)*radius,0,Math.sin(angle)*radius));dog.userData.nextIdleMove=now+4800+Math.random()*4200;}}const target=dog.userData.target||dog.userData.home,dx=target.x-dog.position.x,dz=target.z-dog.position.z,dist=Math.hypot(dx,dz),legs=dog.userData.legs||[],tail=dog.userData.tail,head=dog.userData.head,time=now*.009;if(dist>.075){const speed=toolMode?1.65:.92,step=Math.min(dist,dt*speed);dog.position.x+=dx/dist*step;dog.position.z+=dz/dist*step;dog.rotation.y=Math.atan2(dx,dz);legs.forEach((leg,i)=>leg.rotation.x=Math.sin(time+i%2*Math.PI)*(toolMode?.55:.42));if(tail)tail.rotation.y=Math.sin(time*1.5)*.32;if(head)head.rotation.x=Math.sin(time*.5)*.04;}else{legs.forEach(leg=>leg.rotation.x=0);if(toolMode){legs.slice(0,2).forEach((leg,i)=>leg.rotation.x=-.35+Math.sin(time*1.8+i*Math.PI)*.32);if(head)head.rotation.x=-.12+Math.sin(time*.7)*.1;if(tail)tail.rotation.y=Math.sin(time*2.4)*.42;}else{if(head)head.rotation.x=Math.sin(now*.002)*.07;if(tail)tail.rotation.y=Math.sin(now*.006)*.28;}}dog.position.y=dog.userData.home.y+Math.sin(now*.004+dog.position.x)*.012;}}
 
 
   collides(pos) {
@@ -204,12 +205,12 @@ export class VoxelGame {
     const hits=this.raycaster.intersectObjects(this.npcGroup.children,true);
     if(!hits[0]||hits[0].distance>REACH)return null;
     let node=hits[0].object;while(node&&node.parent!==this.npcGroup)node=node.parent;
-    if(node?.userData?.sessionId&&!node.userData.toolWorker){node.userData.rayDistance=hits[0].distance;return node}return null;
+    if(node?.userData?.sessionId){node.userData.rayDistance=hits[0].distance;return node}return null;
   }
-  publishTarget(){for(const row of this.npcGroup.children){row.userData.focused=false;if(!row.userData.activity&&!row.userData.activityState)setNpcBadge(row,"",false);}if(this.options.isUiOpen()||document.pointerLockElement!==this.renderer.domElement){this.options.onTarget?.(null);return}const npc=this.targetNpc(),hit=this.targetBlock();if(npc&&(!hit||npc.userData.rayDistance<hit.distance)){npc.userData.focused=true;if(!npc.userData.activity)setNpcBadge(npc,`${npc.userData.label||"Agent"} · ${npc.userData.activityState||"待命"}`,true,"#ffffff");this.options.onTarget?.({kind:"npc",label:npc.userData.label||"Agent",action:"选择 Agent"});return}if(!hit){this.options.onTarget?.(null);return}const semantic=BLOCKS[hit.type]?.semantic;const labels={workbench:["DSH 工作台","打开"],models:["模型箱","打开"],capabilities:["插件箱","打开"],reasoning:["附魔台","调整推理强度"],tutorial:["公告牌","阅读"],terminal:["Agent 终端","查看工具状态"],read:["资料书架","查看"],"workspace-map":["制图台","查看 Project 地图"],community:["社区插件宝箱","探索"]};const row=labels[semantic]||[hit.type,hit.type==="chest"?"打开":"使用"];this.options.onTarget?.({kind:"block",label:row[0],action:row[1],coord:hit.coord});}
+  publishTarget(){for(const dog of this.npcGroup.children)dog.userData.focused=false;if(this.options.isUiOpen()||document.pointerLockElement!==this.renderer.domElement){this.options.onTarget?.(null);return}const npc=this.targetNpc(),hit=this.targetBlock();if(npc&&(!hit||npc.userData.rayDistance<hit.distance)){npc.userData.focused=true;this.options.onTarget?.({kind:"npc",label:`${npc.userData.label||"运行中的工作"} · ${npc.userData.progress||"处理中"}`,action:"打开这项工作"});return}if(!hit){this.options.onTarget?.(null);return}const semantic=BLOCKS[hit.type]?.semantic;const labels={workbench:["DSH 工作台","打开"],models:["模型箱","打开"],capabilities:["插件箱","打开"],reasoning:["附魔台","调整推理强度"],tutorial:["公告牌","阅读"],terminal:["Agent 终端","查看工具状态"],read:["资料书架","查看"],"workspace-map":["制图台","查看 Project 地图"],community:["社区插件宝箱","探索"]};const row=labels[semantic]||[hit.type,hit.type==="chest"?"打开":"使用"];this.options.onTarget?.({kind:"block",label:row[0],action:row[1],coord:hit.coord});}
   releaseForUi(){this.keys.clear();this.mining=null;this.breakProgress=0;document.exitPointerLock?.();}
   useTarget() {
-    const npc=this.targetNpc(),hit=this.targetBlock();if(npc&&(!hit||npc.userData.rayDistance<hit.distance)){this.options.onSelectSession(npc.userData.sessionId);setNpcBadge(npc,`${npc.userData.label||"Agent"} · 已选择`,true,"#9cff65");return;}
+    const npc=this.targetNpc(),hit=this.targetBlock();if(npc&&(!hit||npc.userData.rayDistance<hit.distance)){this.releaseForUi();this.options.onSelectSession(npc.userData.sessionId);this.options.onFacility?.("workbench",{sessionId:npc.userData.sessionId});return;}
     const held=this.options.getInventory()[27+this.selected]?.id||null;if(!hit){if(held==="workspace_map"){this.releaseForUi();this.options.onFacility?.("workspace-map");}return;}
     if(hit.type==="chest"){this.releaseForUi();this.options.onOpenChest(keyOf(...hit.coord));return;}
     if(BLOCKS[hit.type]?.semantic){this.releaseForUi();this.options.onFacility?.(BLOCKS[hit.type].semantic,{...hit,key:keyOf(...hit.coord)});return;}
@@ -224,12 +225,12 @@ export class VoxelGame {
   pickBlock(type) { const slots=this.options.getInventory(); const index=slots.findIndex((s)=>s?.id===type); if(index>=27){this.selected=index-27;this.options.onSelect(this.selected);} }
   breakBlock(hit) {
     const [x,y,z]=hit.coord; if(y<=0)return; setBlock(this.world,x,y,z,"air");
-    const drop=BLOCKS[hit.type]?.drop; if(drop){const inserted=insertStack(this.options.getInventory(),{id:drop,count:1});this.options.setInventory(inserted.slots);if(inserted.remainder)this.spawnDrop(hit.point,inserted.remainder);}
+    const drop=BLOCKS[hit.type]?.drop;if(drop)this.spawnDrop(hit.point,{id:drop,count:1});
     if(hit.type==="chest")this.options.breakChest(keyOf(x,y,z),hit.point);
     this.buildWorld();this.options.onWorldChange();
   }
-  spawnDrop(point, stack) { const mesh=createItemModel(stack.id);mesh.scale.multiplyScalar(.72);mesh.position.copy(point);mesh.userData.stack=stack;this.scene.add(mesh);this.dropMeshes.push({mesh,age:0}); }
-  updateDrops(dt) { for(let i=this.dropMeshes.length-1;i>=0;i--){const d=this.dropMeshes[i];d.age+=dt;d.mesh.rotation.y+=dt*2;d.mesh.position.y+=Math.sin(d.age*3)*.001;if(d.mesh.position.distanceTo(this.position)<1.4){const inserted=insertStack(this.options.getInventory(),d.mesh.userData.stack);this.options.setInventory(inserted.slots);if(!inserted.remainder){this.scene.remove(d.mesh);this.dropMeshes.splice(i,1);}}if(d.age>300){this.scene.remove(d.mesh);this.dropMeshes.splice(i,1);}} }
+  spawnDrop(point,stack){const mesh=createItemModel(stack.id),launch=dropLaunchVelocity();mesh.scale.multiplyScalar(.72);mesh.position.set(point.x,point.y+.18,point.z);mesh.userData.stack={...stack};this.scene.add(mesh);this.dropMeshes.push({mesh,age:0,nextPickupAt:.45,velocity:new THREE.Vector3(launch.x,launch.y,launch.z)});}
+  updateDrops(dt){for(let i=this.dropMeshes.length-1;i>=0;i--){const d=this.dropMeshes[i],mesh=d.mesh;d.age+=dt;mesh.rotation.y+=dt*2.4;d.velocity.y-=10*dt;mesh.position.x+=d.velocity.x*dt;mesh.position.y+=d.velocity.y*dt;mesh.position.z+=d.velocity.z*dt;const footY=mesh.position.y-.17,cellY=Math.floor(footY);if(d.velocity.y<=0&&isSolid(this.world,Math.floor(mesh.position.x),cellY,Math.floor(mesh.position.z))){const restY=cellY+1.17;if(mesh.position.y<=restY){mesh.position.y=restY;if(Math.abs(d.velocity.y)>.65)d.velocity.y*=-.26;else d.velocity.y=0;d.velocity.x*=Math.max(0,1-dt*4);d.velocity.z*=Math.max(0,1-dt*4);}}if(d.age>=d.nextPickupAt&&canPickupDrop(mesh.position,this.position,d.age)){d.nextPickupAt=d.age+.16;const inserted=insertStack(this.options.getInventory(),mesh.userData.stack);this.options.setInventory(inserted.slots);if(!inserted.remainder){this.scene.remove(mesh);this.dropMeshes.splice(i,1);continue}mesh.userData.stack=inserted.remainder;}if(d.age>300){this.scene.remove(mesh);this.dropMeshes.splice(i,1);}}}
   updateMining(dt) {
     if(!this.mining)return;
     const hit=this.targetBlock(); if(!hit||keyOf(...hit.coord)!==this.mining.key){this.mining=null;this.breakProgress=0;return;}
