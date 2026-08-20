@@ -8,17 +8,17 @@ export const BLOCKS = Object.freeze({
   log: { solid: true, hardness: 0.9, drop: "log" },
   leaves: { solid: true, hardness: 0.22, drop: "leaves" },
   planks: { solid: true, hardness: 0.65, drop: "planks" },
-  chest: { solid: true, hardness: 0.8, drop: "planks", container: true },
+  chest: { solid: true, hardness: 0.8, drop: "chest", container: true },
   torch: { solid: false, hardness: 0.05, drop: "torch" },
   crafting_table: { solid: true, hardness: 0.75, drop: "crafting_table", semantic: "workbench" },
-  model_chest: { solid: true, hardness: 0.9, drop: "planks", container: true, semantic: "models" },
-  plugin_chest: { solid: true, hardness: 0.9, drop: "planks", container: true, semantic: "capabilities" },
-  enchant_table: { solid: true, hardness: 1.4, drop: "stone", semantic: "reasoning" },
-  bookshelf: { solid: true, hardness: 0.7, drop: "planks", semantic: "read" },
-  terminal: { solid: true, hardness: 1.0, drop: "stone", semantic: "terminal" },
-  sign: { solid: false, hardness: 0.4, drop: "planks", semantic: "tutorial" },
-  cartography_table: { solid: true, hardness: 0.8, drop: "planks", semantic: "workspace-map" },
-  community_chest: { solid: true, hardness: 0.9, drop: "planks", container: true, semantic: "community" }
+  model_chest: { solid: true, hardness: 0.9, drop: "model_chest", container: true, semantic: "models" },
+  plugin_chest: { solid: true, hardness: 0.9, drop: "plugin_chest", container: true, semantic: "capabilities" },
+  enchant_table: { solid: true, hardness: 1.4, drop: "enchant_table", semantic: "reasoning" },
+  bookshelf: { solid: true, hardness: 0.7, drop: "bookshelf", semantic: "read" },
+  terminal: { solid: true, hardness: 1.0, drop: "terminal", semantic: "terminal" },
+  sign: { solid: false, hardness: 0.4, drop: "sign_item", semantic: "tutorial" },
+  cartography_table: { solid: true, hardness: 0.8, drop: "cartography_table", semantic: "workspace-map" },
+  community_chest: { solid: true, hardness: 0.9, drop: "community_chest", container: true, semantic: "community" }
 });
 export const keyOf = (x, y, z) => `${x}|${y}|${z}`;
 export const chunkKey = (x, z) => `${Math.floor(x / CHUNK_SIZE)}|${Math.floor(z / CHUNK_SIZE)}`;
@@ -93,10 +93,12 @@ export function highestSolid(world, x, z) {
   return 0;
 }
 export function playerSpawn(world) { return world.spawn ? { ...world.spawn } : { x: 0.5, y: highestSolid(world, 0, 0) + 1.01, z: 0.5, yaw: 0, pitch: 0 }; }
-export function serializeWorld(world) { return { version: 1, seed: world.seed, diffs: [...world.diffs.entries()] }; }
+export function serializeWorld(world) { return { version: 2, seed: world.seed, diffs: [...world.diffs.entries()] }; }
 export function applyWorldSave(save, radius = WORLD_RADIUS) {
   const world = generateWorld(save?.seed ?? 1337, radius);
+  const legacyFacilityKeys=Number(save?.version||1)<2?new Set(Object.values(world.facilities||{}).map(facility=>facility.key)):null;
   for (const [key, type] of save?.diffs ?? []) {
+    if(type==="air"&&legacyFacilityKeys?.has(key))continue;
     if (type === "air") world.blocks.delete(key); else if (BLOCKS[type]) world.blocks.set(key, type);
     world.diffs.set(key, type);
   }
