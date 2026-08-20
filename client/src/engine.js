@@ -4,6 +4,7 @@ import { ITEM_DEFS, insertStack } from "./inventory.js";
 import { movementVector } from "./movement.js";
 import { createBlockModel, createItemModel, disposeModelCache } from "./models/factory.js";
 import { modelDefinition } from "./models/registry.js";
+import { classifyToolActivity } from "./dsh/tool-activity-router.js";
 
 const PLAYER_WIDTH = 0.6;
 const PLAYER_HEIGHT = 1.8;
@@ -53,13 +54,14 @@ function makeNpc(label, color = 0x6b8e46) {
   box(.7, .9, .38, mat, 0, 1.32, 0); box(.55, .55, .55, skin, 0, 2.05, 0);
   box(.22, .75, .22, dark, -.2, .48, 0); box(.22, .75, .22, dark, .2, .48, 0);
   box(.18, .75, .18, mat, -.47, 1.3, 0); box(.18, .75, .18, mat, .47, 1.3, 0);
-  const c = document.createElement("canvas"); c.width = 256; c.height = 48; const cx = c.getContext("2d");
-  cx.font = "24px Monocraft, monospace"; cx.textAlign = "center"; cx.fillStyle = "rgba(0,0,0,.65)"; cx.fillRect(0, 0, 256, 48); cx.fillStyle = "white"; cx.fillText(label.slice(0, 24), 128, 32);
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false }));
-  sprite.position.set(0, 2.65, 0); sprite.scale.set(3.2, .6, 1); root.add(sprite);
-  root.userData.npc = true; root.userData.label = label;
+  const c = document.createElement("canvas"); c.width = 384; c.height = 72; const cx = c.getContext("2d"),texture=new THREE.CanvasTexture(c);
+  texture.magFilter=THREE.NearestFilter;texture.minFilter=THREE.NearestFilter;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:texture, transparent:true, depthTest:false }));
+  sprite.position.set(0,2.72,0);sprite.scale.set(4.4,.82,1);sprite.visible=false;root.add(sprite);
+  root.userData.npc=true;root.userData.label=label;root.userData.labelSprite=sprite;root.userData.labelCanvas=c;root.userData.labelContext=cx;root.userData.labelText="";
   return root;
 }
+function setNpcBadge(npc,text,visible=true,color="#9cff65"){const sprite=npc?.userData?.labelSprite,cx=npc?.userData?.labelContext;if(!sprite||!cx)return;sprite.visible=visible;if(!visible||npc.userData.labelText===`${text}|${color}`)return;npc.userData.labelText=`${text}|${color}`;cx.clearRect(0,0,384,72);cx.fillStyle="rgba(8,8,6,.78)";cx.fillRect(0,4,384,64);cx.strokeStyle="rgba(255,255,255,.28)";cx.strokeRect(1,5,382,62);cx.font="22px Monocraft, monospace";cx.textAlign="center";cx.fillStyle=color;cx.fillText(String(text).slice(0,31),192,45);sprite.material.map.needsUpdate=true;}
 
 export class VoxelGame {
   constructor(mount, options) {
@@ -95,7 +97,7 @@ export class VoxelGame {
       if (this.options.isSessionListOpen?.() && /^Digit[1-9]$/.test(event.code)) { event.preventDefault(); this.options.onTabSelect?.(Number(event.code.slice(5)) - 1); return; }
       if (event.code === "KeyT" && !this.options.isUiOpen()) { event.preventDefault(); document.exitPointerLock?.(); this.options.onChat(); return; }
       if (event.code === "KeyE" && !this.options.isUiOpen()) { event.preventDefault(); document.exitPointerLock?.(); this.options.onInventory(); return; }
-      if (["KeyM","KeyP","KeyR","KeyG"].includes(event.code) && !this.options.isUiOpen()) { event.preventDefault(); this.releaseForUi(); const map={KeyM:"models",KeyP:"capabilities",KeyR:"reasoning",KeyG:"workbench"};this.options.onFacility?.(map[event.code]); return; }
+      if (["KeyM","KeyP","KeyR","KeyG","KeyN","KeyL"].includes(event.code) && !this.options.isUiOpen()) { event.preventDefault(); this.releaseForUi(); const map={KeyM:"models",KeyP:"capabilities",KeyR:"reasoning",KeyG:"workbench",KeyN:"workspace-map",KeyL:"community"};this.options.onFacility?.(map[event.code]); return; }
       if (event.code === "KeyF" && !this.options.isUiOpen()) { event.preventDefault(); this.options.onOffhandSwap?.(); return; }
       if (event.code === "Escape" && !this.options.isUiOpen()) { document.exitPointerLock?.(); this.options.onPause(); return; }
       if (this.options.isUiOpen()) return;
@@ -161,9 +163,10 @@ export class VoxelGame {
       const npc = makeNpc(row.displayTitle || row.id, isCurrent ? 0x74b84a : (row.running ? 0x9b673f : 0x546f86));
       npc.position.set(x+.5, isCurrent?(this.world.facilities?.workbench?.y||12):highestSolid(this.world,x,z)+1, z+.5); npc.userData.sessionId = row.id; npc.userData.label=row.displayTitle||row.id; npc.userData.home=npc.position.clone();npc.userData.target=npc.position.clone();this.npcGroup.add(npc);
     });
+    if(this.activeToolCalls?.length)this.setToolActivity(this.activeToolCalls);
   }
-  setToolActivity(calls=[]){const npc=this.npcGroup.children.find(n=>n.userData.sessionId===this.currentSessionId);if(!npc)return;const call=calls[0],name=call?.name||"";let facility=null;if(/read|glob|grep/i.test(name))facility=this.world.facilities?.bookshelf;else if(/write|edit/i.test(name))facility=this.world.facilities?.workbench;else if(/terminal|bash|pwsh|command/i.test(name))facility=this.world.facilities?.terminal;npc.userData.activity=call?name:null;npc.userData.target=facility?new THREE.Vector3(facility.x+.5,facility.y,facility.z-.6):npc.userData.home.clone();}
-  updateNpcMotion(dt){for(const npc of this.npcGroup.children){const target=npc.userData.target;if(!target)continue;const dx=target.x-npc.position.x,dz=target.z-npc.position.z,dist=Math.hypot(dx,dz);if(dist>.06){const step=Math.min(dist,dt*2.2);npc.position.x+=dx/dist*step;npc.position.z+=dz/dist*step;npc.rotation.y=Math.atan2(dx,dz);npc.children.slice(1,3).forEach((limb,i)=>limb.rotation.x=Math.sin(performance.now()*.012+i*Math.PI)*.55);}else npc.children.slice(1,3).forEach(limb=>limb.rotation.x=0);if(npc.userData.activity)npc.position.y=npc.userData.home.y+Math.sin(performance.now()*.006)*.035;}}
+  setToolActivity(calls=[]){for(const npc of [...this.npcGroup.children])if(npc.userData.toolWorker)this.npcGroup.remove(npc);const base=this.npcGroup.children.find(n=>n.userData.sessionId===this.currentSessionId&&!n.userData.toolWorker);if(!base){this.activeToolCalls=calls;return}const route=(npc,call,index=0)=>{const activity=classifyToolActivity(call?.name||""),facility=activity.facility?this.world.facilities?.[activity.facility]:null;npc.userData.activity=call?call.name:null;npc.userData.activityKind=call?activity.kind:null;npc.userData.activityState=call?activity.label:null;npc.userData.callId=call?.callId||null;npc.userData.doneUntil=0;npc.userData.target=facility?new THREE.Vector3(facility.x+.5+index*.35,facility.y,facility.z-.7-index*.15):npc.userData.home.clone();if(call)setNpcBadge(npc,`${activity.label} · ${call.name}`,true,"#ffe77a");};if(calls[0])route(base,calls[0]);else if(base.userData.activity){const finished=base.userData.activity;base.userData.activity=null;base.userData.activityKind=null;base.userData.activityState=`完成 · ${finished}`;base.userData.doneUntil=performance.now()+2200;setNpcBadge(base,base.userData.activityState,true,"#8dff66");}else if(!base.userData.doneUntil)route(base,null);calls.slice(1,3).forEach((call,index)=>{const worker=makeNpc(call.name,0x9b673f);worker.userData.toolWorker=true;worker.userData.home=base.userData.home.clone().add(new THREE.Vector3((index+1)*.55,0,.45));worker.position.copy(worker.userData.home);worker.userData.sessionId=`worker:${call.callId}`;route(worker,call,index+1);this.npcGroup.add(worker);});this.activeToolCalls=calls;}
+  updateNpcMotion(dt){const now=performance.now();for(const npc of this.npcGroup.children){if(npc.userData.doneUntil&&now>npc.userData.doneUntil){npc.userData.doneUntil=0;npc.userData.activityState=null;npc.userData.target=npc.userData.home.clone();setNpcBadge(npc,"",false)}if(!npc.userData.activity&&!npc.userData.activityState&&now>(npc.userData.nextIdleMove||0)){npc.userData.nextIdleMove=now+3500+Math.random()*2500;const angle=Math.random()*Math.PI*2,radius=.35+Math.random()*.55;npc.userData.target=npc.userData.home.clone().add(new THREE.Vector3(Math.cos(angle)*radius,0,Math.sin(angle)*radius));}const target=npc.userData.target;if(!target)continue;const dx=target.x-npc.position.x,dz=target.z-npc.position.z,dist=Math.hypot(dx,dz),legs=npc.children.slice(2,4),arms=npc.children.slice(4,6),time=now*.012;if(dist>.06){const step=Math.min(dist,dt*2.2);npc.position.x+=dx/dist*step;npc.position.z+=dz/dist*step;npc.rotation.y=Math.atan2(dx,dz);legs.forEach((limb,i)=>limb.rotation.x=Math.sin(time+i*Math.PI)*.55);arms.forEach((limb,i)=>limb.rotation.x=Math.sin(time+i*Math.PI)*.35);}else{legs.forEach(limb=>limb.rotation.x=0);if(npc.userData.activity){const kind=npc.userData.activityKind;arms.forEach((limb,i)=>{limb.rotation.x=kind==="read"?-1.05:kind==="web"?-.75:Math.sin(time*(kind==="command"?1.8:1)+i*Math.PI)*(kind==="write"?.85:.38);limb.rotation.z=kind==="web"?(i?-.45:.45):0;});}else if(npc.userData.focused||npc.userData.activityState){arms[1].rotation.x=-1+Math.sin(time*1.7)*.45;arms[0].rotation.x=0;}else arms.forEach(limb=>{limb.rotation.x=0;limb.rotation.z=0;});}npc.position.y=npc.userData.home.y+(npc.userData.activity?Math.sin(now*.006)*.035:0);}}
 
 
   collides(pos) {
@@ -201,15 +204,16 @@ export class VoxelGame {
     const hits=this.raycaster.intersectObjects(this.npcGroup.children,true);
     if(!hits[0]||hits[0].distance>REACH)return null;
     let node=hits[0].object;while(node&&node.parent!==this.npcGroup)node=node.parent;
-    if(node?.userData?.sessionId){node.userData.rayDistance=hits[0].distance;return node}return null;
+    if(node?.userData?.sessionId&&!node.userData.toolWorker){node.userData.rayDistance=hits[0].distance;return node}return null;
   }
-  publishTarget(){if(this.options.isUiOpen()||document.pointerLockElement!==this.renderer.domElement){this.options.onTarget?.(null);return}const npc=this.targetNpc(),hit=this.targetBlock();if(npc&&(!hit||npc.userData.rayDistance<hit.distance)){this.options.onTarget?.({kind:"npc",label:npc.userData.label||"Agent",action:"交互"});return}if(!hit){this.options.onTarget?.(null);return}const semantic=BLOCKS[hit.type]?.semantic;const labels={workbench:["DSH 工作台","打开"],models:["模型箱","打开"],capabilities:["插件箱","打开"],reasoning:["附魔台","调整推理强度"],tutorial:["公告牌","阅读"],terminal:["Agent 终端","查看工具状态"],read:["资料书架","查看"]};const row=labels[semantic]||[hit.type,hit.type==="chest"?"打开":"使用"];this.options.onTarget?.({kind:"block",label:row[0],action:row[1],coord:hit.coord});}
+  publishTarget(){for(const row of this.npcGroup.children){row.userData.focused=false;if(!row.userData.activity&&!row.userData.activityState)setNpcBadge(row,"",false);}if(this.options.isUiOpen()||document.pointerLockElement!==this.renderer.domElement){this.options.onTarget?.(null);return}const npc=this.targetNpc(),hit=this.targetBlock();if(npc&&(!hit||npc.userData.rayDistance<hit.distance)){npc.userData.focused=true;if(!npc.userData.activity)setNpcBadge(npc,`${npc.userData.label||"Agent"} · ${npc.userData.activityState||"待命"}`,true,"#ffffff");this.options.onTarget?.({kind:"npc",label:npc.userData.label||"Agent",action:"选择 Agent"});return}if(!hit){this.options.onTarget?.(null);return}const semantic=BLOCKS[hit.type]?.semantic;const labels={workbench:["DSH 工作台","打开"],models:["模型箱","打开"],capabilities:["插件箱","打开"],reasoning:["附魔台","调整推理强度"],tutorial:["公告牌","阅读"],terminal:["Agent 终端","查看工具状态"],read:["资料书架","查看"],"workspace-map":["制图台","查看 Project 地图"],community:["社区插件宝箱","探索"]};const row=labels[semantic]||[hit.type,hit.type==="chest"?"打开":"使用"];this.options.onTarget?.({kind:"block",label:row[0],action:row[1],coord:hit.coord});}
   releaseForUi(){this.keys.clear();this.mining=null;this.breakProgress=0;document.exitPointerLock?.();}
   useTarget() {
-    const npc=this.targetNpc(); if(npc){this.releaseForUi();this.options.onSelectSession(npc.userData.sessionId);this.options.onFacility?.("agent",{sessionId:npc.userData.sessionId});return;}
-    const hit=this.targetBlock(); if(!hit)return;
+    const npc=this.targetNpc(),hit=this.targetBlock();if(npc&&(!hit||npc.userData.rayDistance<hit.distance)){this.options.onSelectSession(npc.userData.sessionId);setNpcBadge(npc,`${npc.userData.label||"Agent"} · 已选择`,true,"#9cff65");return;}
+    const held=this.options.getInventory()[27+this.selected]?.id||null;if(!hit){if(held==="workspace_map"){this.releaseForUi();this.options.onFacility?.("workspace-map");}return;}
     if(hit.type==="chest"){this.releaseForUi();this.options.onOpenChest(keyOf(...hit.coord));return;}
     if(BLOCKS[hit.type]?.semantic){this.releaseForUi();this.options.onFacility?.(BLOCKS[hit.type].semantic,{...hit,key:keyOf(...hit.coord)});return;}
+    if(held==="workspace_map"){this.releaseForUi();this.options.onFacility?.("workspace-map");return;}
     let item=this.options.getInventory()[27+this.selected]; let def=ITEM_DEFS[item?.id]; let fromOffhand=false;
     if(!def?.place){item=this.options.getOffhand?.();def=ITEM_DEFS[item?.id];fromOffhand=true;} if(!def?.place)return;
     const [x,y,z]=hit.coord; const px=x+Math.round(hit.normal.x),py=y+Math.round(hit.normal.y),pz=z+Math.round(hit.normal.z);

@@ -22,7 +22,8 @@ export function apply(ctx) {
     tag.textContent = CSS;
     document.head.appendChild(tag);
     document.body.classList.add("minecraft-game-active");
-    return () => { document.body.classList.remove("minecraft-game-active"); tag.remove(); };
+    const blockContextMenu=event=>{if(event.target?.closest?.(".mc-game-root"))event.preventDefault()};document.addEventListener("contextmenu",blockContextMenu,true);
+    return () => { document.removeEventListener("contextmenu",blockContextMenu,true);document.body.classList.remove("minecraft-game-active"); tag.remove(); };
   }, "minecraft-ui: game stylesheet");
-  ctx.effect(() => ctx.slots.register({ name: "root", priority: -1000 }, (props) => React.createElement(MinecraftBoundary, null, React.createElement(MinecraftRoot, { ...props, services }))), "minecraft-ui: stable root takeover");
+  ctx.effect(() => ctx.slots.inject("shell.overlay", () => ctx.slots.register({ name: "shell.overlay", id: "minecraft-world", order: -1000 }, (props) => React.createElement(MinecraftBoundary, null, React.createElement(MinecraftRoot, { ...props, services })))), "minecraft-ui: world overlay on native shell");
 }

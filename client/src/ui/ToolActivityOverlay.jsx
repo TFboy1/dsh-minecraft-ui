@@ -1,0 +1,2 @@
+import React from"react";import{toolActivityRows}from"../dsh/tool-activity-router.js";
+export function ToolActivityOverlay({calls=[]}){const rows=toolActivityRows(calls);if(!rows.length)return null;return <aside className="mc-tool-activity"><header>VILLAGER TASKS</header>{rows.slice(0,4).map((r,i)=><div key={r.callId||i}><i>{r.icon}</i><span><b>{r.name}</b><small>{r.label}</small></span><em>{i?"QUEUED":"RUNNING"}</em></div>)}</aside>}

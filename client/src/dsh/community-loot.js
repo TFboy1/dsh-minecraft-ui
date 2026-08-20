@@ -1,0 +1,1 @@
+export function selectCommunityLoot(items,seed,count=9){if(!items.length)return[];const out=[],used=new Set();let n=(seed||1)>>>0;while(out.length<Math.min(count,items.length)){n=(Math.imul(n,1664525)+1013904223)>>>0;const item=items[n%items.length];if(!used.has(item.id)){used.add(item.id);out.push({...item,plugin:true})}}return out}

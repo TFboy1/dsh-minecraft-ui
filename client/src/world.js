@@ -16,7 +16,9 @@ export const BLOCKS = Object.freeze({
   enchant_table: { solid: true, hardness: 1.4, drop: "stone", semantic: "reasoning" },
   bookshelf: { solid: true, hardness: 0.7, drop: "planks", semantic: "read" },
   terminal: { solid: true, hardness: 1.0, drop: "stone", semantic: "terminal" },
-  sign: { solid: false, hardness: 0.4, drop: "planks", semantic: "tutorial" }
+  sign: { solid: false, hardness: 0.4, drop: "planks", semantic: "tutorial" },
+  cartography_table: { solid: true, hardness: 0.8, drop: "planks", semantic: "workspace-map" },
+  community_chest: { solid: true, hardness: 0.9, drop: "planks", container: true, semantic: "community" }
 });
 export const keyOf = (x, y, z) => `${x}|${y}|${z}`;
 export const chunkKey = (x, z) => `${Math.floor(x / CHUNK_SIZE)}|${Math.floor(z / CHUNK_SIZE)}`;
@@ -45,7 +47,7 @@ export function buildStarterHouse(blocks) {
     blocks.set(keyOf(x,floorY+5,z),"planks");
   }
   const place=(name,x,z,type)=>{const value={x,y:floorY+1,z,key:keyOf(x,floorY+1,z),type};blocks.set(value.key,type);facilities[name]=value;};
-  place("workbench",0,4,"crafting_table");place("modelChest",-3,1,"model_chest");place("pluginChest",3,1,"plugin_chest");place("enchantTable",-3,4,"enchant_table");place("bookshelf",-4,4,"bookshelf");place("terminal",3,4,"terminal");place("tutorial",-2,5,"sign");
+  place("workbench",0,4,"crafting_table");place("modelChest",-3,1,"model_chest");place("pluginChest",3,1,"plugin_chest");place("enchantTable",-3,4,"enchant_table");place("bookshelf",-4,4,"bookshelf");place("terminal",3,4,"terminal");place("cartography",2,4,"cartography_table");place("tutorial",-2,5,"sign");
   return { floorY, facilities, spawn:{x:.5,y:floorY+1.01,z:-.5,yaw:Math.PI,pitch:-.2} };
 }
 
@@ -68,14 +70,14 @@ export function generateWorld(seed = 1337, radius = WORLD_RADIUS) {
       }
     }
   }
-  const chestCoords = [[5, 5], [-8, 7], [11, -10], [-13, -9]];
-  for (const [x, z] of chestCoords) {
-    const y = terrainHeight(seed, x, z) + 1;
-    blocks.set(keyOf(x, y, z), "chest");
-    chests.push({ x, y, z, key: keyOf(x, y, z) });
+  const chestCoords = [[7, 8,"resource"], [-8, 7,"community"], [11, -10,"resource"], [-13, -9,"community"], [18,12,"community"],[-20,15,"community"]];
+  for (const [x, z, kind] of chestCoords) {
+    const y = terrainHeight(seed, x, z) + 1, type=kind==="community"?"community_chest":"chest";
+    blocks.set(keyOf(x, y, z), type);
+    chests.push({ x, y, z, key: keyOf(x, y, z), kind, lootSeed:Math.floor(hash(seed+901,x,z)*1000000) });
   }
   const starter = buildStarterHouse(blocks);
-  return { seed, radius, blocks, chests, diffs: new Map(), facilities: starter.facilities, spawn: starter.spawn, structureVersion: 1 };
+  return { seed, radius, blocks, chests, diffs: new Map(), facilities: starter.facilities, spawn: starter.spawn, structureVersion: 2 };
 }
 
 export function getBlock(world, x, y, z) { return world.blocks.get(keyOf(Math.floor(x), Math.floor(y), Math.floor(z))) ?? "air"; }

@@ -21,7 +21,12 @@ export const ITEM_DEFS = Object.freeze({
   iron_chestplate: { id: "iron_chestplate", name: "铁胸甲", max: 1, armorSlot: "chest", armor: 6, durability: 240 },
   iron_leggings: { id: "iron_leggings", name: "铁护腿", max: 1, armorSlot: "legs", armor: 5, durability: 225 },
   iron_boots: { id: "iron_boots", name: "铁靴子", max: 1, armorSlot: "feet", armor: 2, durability: 195 },
-  shield: { id: "shield", name: "盾牌", max: 1, offhand: true, durability: 336 }
+  shield: { id: "shield", name: "盾牌", max: 1, offhand: true, durability: 336 },
+  chest: { id: "chest", name: "箱子", max: 64, place: "chest" },
+  workspace_map: { id: "workspace_map", name: "Workspace 地图", max: 1, action: "workspace-map" },
+  paper: { id: "paper", name: "纸", max: 64 },
+  compass: { id: "compass", name: "指南针", max: 1 },
+  sign_item: { id: "sign_item", name: "橡木告示牌", max: 16, place: "sign" }
 });
 
 export function maxStack(stackOrId) {
@@ -51,6 +56,7 @@ export function defaultPlayerInventory() {
   slots[33] = stack("apple", 5);
   slots[34] = stack("wood_pickaxe", 1, { durability: 59 });
   slots[35] = stack("stone_pickaxe", 1, { durability: 131 });
+  slots[26] = stack("workspace_map", 1);
   return slots;
 }
 
