@@ -187,6 +187,6 @@ $DSH_HOME/dshcraft/community-cache.json
 
 ## License
 
-项目代码采用 [MIT License](./package.json)。
+项目代码采用 [MIT License](./LICENSE)。
 
 像素字体使用 Monocraft，其许可文件位于 [`licenses/Monocraft-LICENSE.txt`](./licenses/Monocraft-LICENSE.txt)。Minecraft 是 Mojang Studios 的商标；本项目与 Mojang Studios 或 Microsoft 无隶属关系。
