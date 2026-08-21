@@ -1,9 +1,5 @@
 # DSHcraft
 
-把 DeepSeek Harness 变成一座可游玩的 Minecraft 风格 Agent 工作空间。
-
-DSHcraft 不是一套重新实现的聊天界面。它以 Cordis Client Plugin 的形式挂载到官方 `shell.overlay`，保留 DSH 原生的 Workspace、Session、Conversation、Trajectory、Composer、权限、模型选择和上下文统计，只把进入方式、空间隐喻与视觉表现改造成方块世界。
-
 > npm 包：`dsh-minecraft-ui`
 >
 > 当前版本：`0.3.0`
@@ -11,6 +7,51 @@ DSHcraft 不是一套重新实现的聊天界面。它以 Cordis Client Plugin �
 > 适用平台：DSH Web（桌面浏览器）
 >
 > 状态：实验性主题 / 可玩客户端
+
+## 安装
+
+DSHcraft 是一个同时声明 `dsh.bundle` 和 `dsh.client` 的正式组合包。安装后，它会贡献稳定 Cordis 行 `minecraft-ui`，浏览器模块身份为 `dsh-minecraft-ui`。
+
+不要直接在正在使用的主 Web profile 中启用候选版本。先安装到独立 canary profile，检查组合层，再通过 Guardian stage / canary / promote 流程提升。
+
+### npm（推荐）
+
+安装预构建包：
+
+```bash
+dsh plugin --profile <canary> add dsh-minecraft-ui
+dsh --profile <canary> --dump-config
+```
+
+### 本地 tarball
+
+```bash
+pnpm install
+pnpm run verify
+pnpm pack
+dsh plugin --profile <canary> add ./dsh-minecraft-ui-0.3.0.tgz
+dsh --profile <canary> --dump-config
+```
+
+### 固定 Git commit
+
+```bash
+dsh plugin --profile <canary> add github:TFboy1/dsh-minecraft-ui#<commit-sha>
+```
+
+Git 安装会运行本包的 `prepare` 构建。pnpm 10+ 要求用户显式允许该安装脚本；只对可信源码授权，并按 DSH 输出的准确包键配置 `allowBuilds: dsh-minecraft-ui`。不希望授予安装时构建权限时，请使用 npm 预构建包或 tarball。
+
+卸载：
+
+```bash
+dsh plugin --profile <canary> remove dsh-minecraft-ui
+```
+
+## 项目介绍
+
+把 DeepSeek Harness 变成一座可游玩的 Minecraft 风格 Agent 工作空间。
+
+DSHcraft 不是一套重新实现的聊天界面。它以 Cordis Client Plugin 的形式挂载到官方 `shell.overlay`，保留 DSH 原生的 Workspace、Session、Conversation、Trajectory、Composer、权限、模型选择和上下文统计，只把进入方式、空间隐喻与视觉表现改造成方块世界。
 
 ## 核心理念
 
@@ -103,45 +144,6 @@ DSHcraft 不是一套重新实现的聊天界面。它以 Cordis Client Plugin �
 | `L` | 社区插件宝箱 |
 
 首次点击画面后浏览器会请求 Pointer Lock。打开任何设施时会立即释放鼠标锁定。
-
-## 安装
-
-DSHcraft 是一个同时声明 `dsh.bundle` 和 `dsh.client` 的正式组合包。安装后，它会贡献稳定 Cordis 行 `minecraft-ui`，浏览器模块身份为 `dsh-minecraft-ui`。
-
-不要直接在正在使用的主 Web profile 中启用候选版本。先安装到独立 canary profile，检查组合层，再通过 Guardian stage / canary / promote 流程提升。
-
-### npm 包
-
-发布后可安装预构建包：
-
-```bash
-dsh plugin --profile <canary> add dsh-minecraft-ui
-dsh --profile <canary> --dump-config
-```
-
-### 本地 tarball
-
-```bash
-pnpm install
-pnpm run verify
-pnpm pack
-dsh plugin --profile <canary> add ./dsh-minecraft-ui-0.3.0.tgz
-dsh --profile <canary> --dump-config
-```
-
-### 固定 Git commit
-
-```bash
-dsh plugin --profile <canary> add github:TFboy1/dsh-minecraft-ui#<commit-sha>
-```
-
-Git 安装会运行本包的 `prepare` 构建。pnpm 10+ 要求用户显式允许该安装脚本；只对可信源码授权，并按 DSH 输出的准确包键配置 `allowBuilds: dsh-minecraft-ui`。不希望授予安装时构建权限时，请使用 npm 预构建包或 tarball。
-
-卸载：
-
-```bash
-dsh plugin --profile <canary> remove dsh-minecraft-ui
-```
 
 ## 配置
 
