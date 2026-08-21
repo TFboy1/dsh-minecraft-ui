@@ -1,15 +1,53 @@
 {
-  "name": "minecraft-ui",
-  "version": "0.2.0",
-  "description": "Playable Minecraft-inspired voxel client that replaces the DSH Web shell on an isolated test profile",
+  "name": "dsh-minecraft-ui",
+  "version": "0.3.0",
+  "description": "A playable Minecraft-inspired voxel workspace overlay for DeepSeek Harness Web",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "minecraft",
+    "voxel",
+    "theme",
+    "agent-ui"
+  ],
+  "homepage": "https://github.com/TFboy1/dsh-minecraft-ui#readme",
+  "bugs": {
+    "url": "https://github.com/TFboy1/dsh-minecraft-ui/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TFboy1/dsh-minecraft-ui.git"
+  },
+  "author": "TFboy1",
+  "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "licenses/Monocraft-LICENSE.txt"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.7.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
@@ -23,15 +61,31 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node --check lib/index.js && node --check scripts/build.mjs && node --check client/src/inventory.js && node --check client/src/world.js && node --check client/src/persistence.js",
+    "check": "node --check src/index.js && node --check scripts/build.mjs && node --check scripts/verify-package.mjs && node --check client/src/inventory.js && node --check client/src/world.js && node --check client/src/persistence.js",
     "test": "node --test test/*.test.js",
-    "verify": "npm run check && npm run test && npm run build && node --check lib/client.js"
+    "package:check": "node scripts/verify-package.mjs",
+    "verify": "pnpm run check && pnpm run build && pnpm run test && pnpm run package:check && node --check lib/client.js",
+    "prepare": "pnpm run build",
+    "prepack": "pnpm run verify"
   },
   "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1",
     "three": "^0.180.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-client-connection": ">=0.1.0-rc.8 <0.2.0",
+    "@deepseek-ai/dsh-client-runtime": ">=0.1.0-rc.8 <0.2.0",
+    "@deepseek-ai/dsh-client-ui-model-selection": ">=0.1.0-rc.8 <0.2.0",
+    "@deepseek-ai/dsh-client-ui-slots": ">=0.1.0-rc.8 <0.2.0",
+    "react": ">=18.2.0 <19"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "esbuild": "^0.25.9"
-  },
-  "license": "MIT"
+  }
 }

@@ -4,8 +4,12 @@
 
 DSHcraft 不是一套重新实现的聊天界面。它以 Cordis Client Plugin 的形式挂载到官方 `shell.overlay`，保留 DSH 原生的 Workspace、Session、Conversation、Trajectory、Composer、权限、模型选择和上下文统计，只把进入方式、空间隐喻与视觉表现改造成方块世界。
 
-> 当前版本：`0.2.0`  
-> 适用平台：DSH Web（桌面浏览器）  
+> npm 包：`dsh-minecraft-ui`
+>
+> 当前版本：`0.3.0`
+>
+> 适用平台：DSH Web（桌面浏览器）
+>
 > 状态：实验性主题 / 可玩客户端
 
 ## 核心理念
@@ -100,23 +104,87 @@ DSHcraft 不是一套重新实现的聊天界面。它以 Cordis Client Plugin �
 
 首次点击画面后浏览器会请求 Pointer Lock。打开任何设施时会立即释放鼠标锁定。
 
+## 安装
+
+DSHcraft 是一个同时声明 `dsh.bundle` 和 `dsh.client` 的正式组合包。安装后，它会贡献稳定 Cordis 行 `minecraft-ui`，浏览器模块身份为 `dsh-minecraft-ui`。
+
+不要直接在正在使用的主 Web profile 中启用候选版本。先安装到独立 canary profile，检查组合层，再通过 Guardian stage / canary / promote 流程提升。
+
+### npm 包
+
+发布后可安装预构建包：
+
+```bash
+dsh plugin --profile <canary> add dsh-minecraft-ui
+dsh --profile <canary> --dump-config
+```
+
+### 本地 tarball
+
+```bash
+pnpm install
+pnpm run verify
+pnpm pack
+dsh plugin --profile <canary> add ./dsh-minecraft-ui-0.3.0.tgz
+dsh --profile <canary> --dump-config
+```
+
+### 固定 Git commit
+
+```bash
+dsh plugin --profile <canary> add github:TFboy1/dsh-minecraft-ui#<commit-sha>
+```
+
+Git 安装会运行本包的 `prepare` 构建。pnpm 10+ 要求用户显式允许该安装脚本；只对可信源码授权，并按 DSH 输出的准确包键配置 `allowBuilds: dsh-minecraft-ui`。不希望授予安装时构建权限时，请使用 npm 预构建包或 tarball。
+
+卸载：
+
+```bash
+dsh plugin --profile <canary> remove dsh-minecraft-ui
+```
+
+## 配置
+
+Bundle 自带安全默认值，用户可以在该 profile 的后置 patch 中覆盖稳定行 `minecraft-ui`：
+
+```yaml
+- id: minecraft-ui
+  config:
+    dataDirectory: dshcraft
+    catalogUrl: https://awesome-dsh-plugin.com/plugins.json
+    catalogCacheTtlMs: 21600000
+    catalogLimit: 2000
+    confirmationTtlMs: 60000
+```
+
+| 字段 | 默认值 | 说明 |
+| --- | ---: | --- |
+| `dataDirectory` | `dshcraft` | `$DSH_HOME` 内的安全相对目录 |
+| `catalogUrl` | 社区目录 URL | 仅允许 HTTP(S) |
+| `catalogCacheTtlMs` | `21600000` | 社区目录缓存时长 |
+| `catalogLimit` | `2000` | 最多保留的目录条目数，范围 1–5000 |
+| `confirmationTtlMs` | `60000` | 社区插件确认 token 有效期 |
+
+Cordis 会用 Schemastery 校验配置并填充默认值；非法路径、协议和数值范围会在插件激活时直接报错。
+
 ## 社区插件安全模型
 
-社区插件采用“收集 → 检查 → 明确确认”的流程：
+社区插件采用“发现 → 收集 → 检查 → 明确确认”的流程：
 
 1. 从策展目录读取插件元数据。
 2. 将候选插件收集到社区宝箱。
 3. 展示安装命令、风险标记和第三方代码警告。
-4. 用户明确确认后才继续。
+4. 用户确认后返回一份 Guardian 安装计划。
 
-默认安装模式是 **dry-run**，不会修改 Web profile。只有 Host 环境显式设置 `DSHCRAFT_COMMUNITY_INSTALL=enabled` 时才允许真实执行安装命令。生产环境仍应通过 DSH Guardian 的 stage / canary / promote 流程管理插件变更。
+确认结果始终是 **dry-run**。DSHcraft 不会 spawn CLI，也不会自行修改任何 profile。候选插件必须交给 Guardian stage，在独立 canary 验证后再由用户决定是否 promote。
 
 ## 架构
 
 ```text
-minecraft-ui/
-├─ lib/index.js                    # Host RPC、能力限制、社区目录与持久化
-├─ client/src/index.jsx            # shell.overlay 注册与全局样式生命周期
+dsh-minecraft-ui/
+├─ src/index.js                    # Host 插件、Config、RPC 与持久化
+├─ cordis.patch.yml                # dsh.bundle 贡献的组合层
+├─ client/src/index.jsx            # shell.overlay 注册与样式生命周期
 ├─ client/src/game-root.jsx        # DSH 状态绑定与游戏 UI 组合
 ├─ client/src/engine.js            # Three.js 世界、交互、掉落物和工作小狗
 ├─ client/src/world.js             # 地形、建筑、方块与存档迁移
@@ -124,7 +192,10 @@ minecraft-ui/
 ├─ client/src/inventory/           # 合成、容器和玩家背包状态机
 ├─ client/src/dsh/                 # Session 投影、工具路由和社区战利品
 ├─ client/src/ui/                  # 工作台、箱子、地图和 HUD
-├─ scripts/build.mjs               # Client bundle 构建
+├─ scripts/build.mjs               # Host / Client 确定性构建
+├─ scripts/verify-package.mjs      # Bundle、身份、许可与体积契约检查
+├─ lib/index.js                    # 构建后的 Host 入口
+├─ lib/client.js                   # lazy-CJS 浏览器 bundle
 └─ test/                           # Node test runner 测试
 ```
 
@@ -139,7 +210,7 @@ minecraft-ui/
 ### 环境要求
 
 - Node.js 22+
-- pnpm
+- pnpm 11+
 - 可运行的 DeepSeek Harness Web 环境
 
 ### 常用命令
@@ -148,27 +219,23 @@ minecraft-ui/
 pnpm install
 pnpm test
 pnpm run build
+pnpm run package:check
 pnpm run verify
+pnpm pack --dry-run
 ```
 
-- `pnpm test`：运行背包、合成、移动、Session 命令、模型、世界、工作小狗和掉落物测试。
-- `pnpm run build`：生成 `lib/client.js` 与内联样式。
-- `pnpm run verify`：依次执行语法检查、测试、构建和产物检查。
+- `pnpm test`：运行 Host、Package、背包、合成、移动、Session、模型、世界、工作小狗和掉落物测试。
+- `pnpm run build`：从 `src/` 与 `client/src/` 生成 `lib/index.js`、`lib/client.js`；构建不改写源码目录。
+- `pnpm run package:check`：检查 Bundle manifest、Client factory 身份、发布白名单、双许可和 bundle 体积。
+- `pnpm run verify`：依次执行语法检查、构建、测试、Package 契约和产物检查。
+- `prepare`：支持固定 commit 的 Git 安装。
+- `prepack`：在 tarball / npm 发布前强制执行完整验证。
 
-修改 Client 源码后必须重新运行 `pnpm run build`。
-
-### 安全测试流程
-
-不要在主 Web profile 或当前生产浏览器中直接启用候选版本：
-
-1. 使用 `guardian_stage_plugin` 或部署提供的 `dsh-guardian plugin stage` 流程暂存插件。
-2. 在独立 canary profile / 端口中验证。
-3. 由用户确认后再通过 Guardian promote。
-4. 浏览器自动化只使用一个独立测试 profile，结束后关闭该浏览器实例。
+修改 Client 源码后必须重新运行 `pnpm run build`。前端人工验证由用户在独立 canary 中执行。
 
 ## 持久化
 
-游戏状态通过 Host Bridge 写入 DSH 数据目录。能力与社区状态位于：
+能力与社区状态默认写入：
 
 ```text
 $DSH_HOME/dshcraft/capabilities.json
@@ -184,6 +251,7 @@ $DSH_HOME/dshcraft/community-cache.json
 - 这是 DSH 的空间化主题与客户端，不是完整 Minecraft 实现。
 - 社区目录不可用时会回退到缓存或内置候选条目。
 - 部分设施属于 DSH 语义映射，行为与原版 Minecraft 方块不完全相同。
+- Client bundle 包含 Three.js 和内嵌字体，因而被设置为 2 MB 以内的显式体积预算。
 
 ## License
 

@@ -1,0 +1,6 @@
+# DSHcraft bundle layer.
+# The stable Cordis row id remains "minecraft-ui" for compatibility, while
+# Node resolves the canonical installable package name "dsh-minecraft-ui".
+- insert:
+    - id: minecraft-ui
+      name: dsh-minecraft-ui
