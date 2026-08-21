@@ -53,6 +53,46 @@ dsh plugin --profile <canary> remove dsh-minecraft-ui
 
 DSHcraft 不是一套重新实现的聊天界面。它以 Cordis Client Plugin 的形式挂载到官方 `shell.overlay`，保留 DSH 原生的 Workspace、Session、Conversation、Trajectory、Composer、权限、模型选择和上下文统计，只把进入方式、空间隐喻与视觉表现改造成方块世界。
 
+## 界面预览
+
+<p align="center">
+  <a href="https://www.bilibili.com/video/BV1d48c6BEPj"><strong>▶ Minecraft 版 DeepSeek Harness 长这样？【B站AI创作公开赛】</strong></a><br>
+  <sub>点击前往哔哩哔哩观看完整视频演示</sub>
+</p>
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <strong>可游玩的方块世界</strong><br>
+      <img src="./docs/screenshots/voxel-world.png" alt="DSHcraft 方块世界与游戏 HUD">
+    </td>
+    <td align="center" width="50%">
+      <strong>背包与合成界面</strong><br>
+      <img src="./docs/screenshots/inventory-crafting.png" alt="DSHcraft 背包、快捷栏与合成界面">
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <strong>Agent 插件箱</strong><br>
+      <img src="./docs/screenshots/agent-plugin-chest.png" alt="DSHcraft Agent 插件箱与工具详情">
+    </td>
+    <td align="center" width="50%">
+      <strong>模型仓库</strong><br>
+      <img src="./docs/screenshots/model-chest.png" alt="DSHcraft 模型仓库与模型装备">
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <strong>推理强度附魔</strong><br>
+      <img src="./docs/screenshots/reasoning-enchantment.png" alt="DSHcraft 推理强度选择界面">
+    </td>
+    <td align="center" width="50%">
+      <strong>语义化设施</strong><br>
+      <img src="./docs/screenshots/enchanting-table.png" alt="DSHcraft 附魔台与场景交互提示">
+    </td>
+  </tr>
+</table>
+
 ## 核心理念
 
 | DSH 概念 | DSHcraft 表现 |
