@@ -1,12 +1,17 @@
-# DSHcraft
+<p align="center">
+  <img src="./docs/banner.png" alt="DSHcraft — Play Your Agent Workspace" width="100%">
+</p>
 
-> npm 包：`dsh-minecraft-ui`
->
-> 当前版本：`0.3.0`
->
-> 适用平台：DSH Web（桌面浏览器）
->
-> 状态：实验性主题 / 可玩客户端
+[![npm](https://img.shields.io/npm/v/dsh-minecraft-ui?style=for-the-badge&logo=npm&color=CB3837)](https://www.npmjs.com/package/dsh-minecraft-ui) [![视频演示](https://img.shields.io/badge/Bilibili-Video_Demo-00A1D6?style=for-the-badge&logo=bilibili&logoColor=white)](https://www.bilibili.com/video/BV1d48c6BEPj) [![爱发电](https://img.shields.io/badge/爱发电-Support_Me-FF69B4?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://www.ifdian.net/item/1a20ed042f0711f1865a52540025c377) [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-☕-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.creem.io/payment/prod_1yc40mIhKwwrc7iqFOG9G2) [![GitHub Stars](https://img.shields.io/github/stars/TFboy1/dsh-minecraft-ui?style=for-the-badge&logo=github&color=F5C542)](https://github.com/TFboy1/dsh-minecraft-ui/stargazers) [![License](https://img.shields.io/github/license/TFboy1/dsh-minecraft-ui?style=for-the-badge&color=4C8EDA)](./LICENSE)
+
+[![CI](https://img.shields.io/github/actions/workflow/status/TFboy1/dsh-minecraft-ui/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/TFboy1/dsh-minecraft-ui/actions/workflows/ci.yml) [![npm downloads](https://img.shields.io/npm/dm/dsh-minecraft-ui?style=flat-square&logo=npm)](https://www.npmjs.com/package/dsh-minecraft-ui) [![DSH](https://img.shields.io/badge/DeepSeek_Harness-Web-5CDB95?style=flat-square)](#项目介绍) [![Three.js](https://img.shields.io/badge/Three.js-0.180-000000?style=flat-square&logo=threedotjs)](https://threejs.org/) [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/) [![Node.js](https://img.shields.io/badge/Node.js-22+-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+
+[![简体中文](https://img.shields.io/badge/简体中文-当前语言-red?style=flat-square)](#) [![English](https://img.shields.io/badge/English-README-blue?style=flat-square)](./docs/README_EN.md) [![日本語](https://img.shields.io/badge/日本語-README-blue?style=flat-square)](./docs/README_JA.md) [![Français](https://img.shields.io/badge/Français-README-blue?style=flat-square)](./docs/README_FR.md) [![Deutsch](https://img.shields.io/badge/Deutsch-README-blue?style=flat-square)](./docs/README_DE.md)
+
+<p align="center">
+  把 DeepSeek Harness 变成一座可游玩的 Minecraft 风格 Agent 工作空间。<br>
+  <sub>探索体素世界 · 装备模型 · 附魔推理强度 · 与正在工作的 Agent 并肩冒险</sub>
+</p>
 
 ## 安装
 
